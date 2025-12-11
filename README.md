@@ -1,6 +1,6 @@
 <!-- Anime / Hacker Banner -->
 <p align="center">
-  <img src="https://i.imgur.com/zk7FQ1Y.gif" width="700"/>
+  <img src="[https://i.imgur.com/zk7FQ1Y.gif](https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMTk1cGQ0YnBuYjUyY2NwYWVmcDRuMHVsZTNuNGYyc3QwcGcyc2wyNCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/bGgsc5mWoryfgKBx1u/giphy.gif)" width="700"/>
 </p>
 
 <h1 align="center">⚡ Yashraj00700 (Kali Hacker) ⚡</h1>
