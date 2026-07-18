@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Render the contributions calendar as a self-contained animated SVG.
 
-Boxes reveal diagonally (week + day order) using CSS keyframes, then freeze.
-No JS, no external fonts/images — just <rect> + <style>, which GitHub renders
-and animates when embedded via <img> in a README.
+Boxes fade in diagonally (week + day order) using SMIL <animate>, then
+freeze. CSS @keyframes animations do NOT reliably run on SVGs referenced
+via <img> (confirmed empirically on github.com) — only SMIL does, so
+that's what every element here uses.
 """
 import json
 from datetime import date
@@ -17,6 +18,7 @@ GAP = 3
 MARGIN_LEFT = 24
 MARGIN_TOP = 10
 STAGGER = 0.012  # seconds between diagonally-adjacent cells
+DURATION = 0.35
 
 # Matches avi-ascii.svg width (414.4) + info-card.svg width (490) so the
 # heatmap's edges line up flush with the two-column row beneath it.
@@ -52,7 +54,6 @@ def render(weeks: list[list[dict]]) -> str:
     height = MARGIN_TOP + 7 * step + GAP
 
     rects = []
-    max_delay = 0.0
     for wi, week in enumerate(weeks):
         for di in range(7):
             day = week[di] if di < len(week) else None
@@ -61,37 +62,17 @@ def render(weeks: list[list[dict]]) -> str:
             x = MARGIN_LEFT + wi * step
             y = MARGIN_TOP + di * step
             delay = (wi + di) * STAGGER
-            max_delay = max(max_delay, delay)
             title = f"{day['date']}: level {level}" if day else ""
             rects.append(
                 f'<rect x="{x:.2f}" y="{y:.2f}" width="{cell:.2f}" height="{cell:.2f}" rx="2.5" ry="2.5" '
-                f'fill="{color}" class="cell" style="animation-delay:{delay:.3f}s">'
+                f'fill="{color}" opacity="0">'
+                f'<animate attributeName="opacity" from="0" to="1" begin="{delay:.3f}s" '
+                f'dur="{DURATION}s" fill="freeze" calcMode="linear" />'
                 f'{f"<title>{title}</title>" if title else ""}</rect>'
             )
 
-    duration = 0.35
-    total_time = max_delay + duration
-
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width:.2f} {height:.2f}" width="{width:.2f}" height="{height:.2f}">
-  <style>
-    .bg {{ fill: transparent; }}
-    .cell {{
-      opacity: 0;
-      transform-box: fill-box;
-      transform-origin: center;
-      transform: scale(0.3) translateY(-6px);
-      animation-name: reveal;
-      animation-duration: {duration}s;
-      animation-timing-function: ease-out;
-      animation-fill-mode: forwards;
-    }}
-    @keyframes reveal {{
-      0%   {{ opacity: 0; transform: scale(0.3) translateY(-6px); }}
-      60%  {{ opacity: 1; transform: scale(1.08) translateY(0); }}
-      100% {{ opacity: 1; transform: scale(1) translateY(0); }}
-    }}
-  </style>
-  <rect class="bg" x="0" y="0" width="{width}" height="{height}" />
+  <rect x="0" y="0" width="{width:.2f}" height="{height:.2f}" fill="none" />
   {''.join(rects)}
 </svg>
 """

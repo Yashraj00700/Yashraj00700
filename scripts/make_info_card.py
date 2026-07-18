@@ -2,7 +2,9 @@
 """Render a neofetch-style info card as a self-contained animated SVG.
 
 Lines fade + slide in with staggered delays, then freeze — no external
-fonts, no JS, just <text> + CSS keyframes.
+fonts, no JS, just <text> + SMIL <animate>. CSS @keyframes animations do
+NOT reliably run on SVGs referenced via <img> (confirmed empirically on
+github.com), so SMIL is used instead of CSS for every animated element.
 """
 from pathlib import Path
 
@@ -51,27 +53,16 @@ def render() -> str:
         else:
             text = f'<tspan fill="{DIM}">{esc(a)}:</tspan> <tspan fill="{FG}">{esc(b)}</tspan>'
         rows.append(
-            f'<text x="{PAD_X}" y="{y}" font-family="{FONT}" font-size="14.5" '
-            f'class="line" style="animation-delay:{delay:.2f}s">{text}</text>'
+            f'<text x="{PAD_X}" y="{y}" font-family="{FONT}" font-size="14.5" opacity="0">'
+            f'<animate attributeName="opacity" from="0" to="1" begin="{delay:.2f}s" '
+            f'dur="{DURATION}s" fill="freeze" />'
+            f'<animateTransform attributeName="transform" type="translate" '
+            f'from="-8 0" to="0 0" begin="{delay:.2f}s" dur="{DURATION}s" fill="freeze" />'
+            f'{text}</text>'
         )
 
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" width="{WIDTH}" height="{HEIGHT}">
-  <style>
-    .frame {{ fill: #0d1117; stroke: #30363d; stroke-width: 1; }}
-    .line {{
-      opacity: 0;
-      transform: translateX(-8px);
-      animation-name: appear;
-      animation-duration: {DURATION}s;
-      animation-timing-function: ease-out;
-      animation-fill-mode: forwards;
-    }}
-    @keyframes appear {{
-      0%   {{ opacity: 0; transform: translateX(-8px); }}
-      100% {{ opacity: 1; transform: translateX(0); }}
-    }}
-  </style>
-  <rect class="frame" x="0.5" y="0.5" width="{WIDTH - 1}" height="{HEIGHT - 1}" rx="8" ry="8" />
+  <rect x="0.5" y="0.5" width="{WIDTH - 1}" height="{HEIGHT - 1}" rx="8" ry="8" fill="#0d1117" stroke="#30363d" stroke-width="1" />
   {''.join(rows)}
 </svg>
 """

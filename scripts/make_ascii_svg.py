@@ -3,6 +3,8 @@
 
 Each row wipes in left-to-right via a clip-path animation, staggered
 top-to-bottom, then freezes. Monospace, single accent color, no images.
+Uses SMIL <animate> (not CSS @keyframes) — CSS animations do not
+reliably run on SVGs referenced via <img> (confirmed on github.com).
 """
 import sys
 from pathlib import Path
@@ -83,8 +85,10 @@ def render(lines: list[str]) -> str:
         clip_id = f"wipe{r}"
         delay = r * ROW_STAGGER
         clip_defs.append(
-            f'<clipPath id="{clip_id}"><rect x="0" y="{r * CELL_H}" width="0" height="{CELL_H + 1}" '
-            f'class="wipe" style="animation-delay:{delay:.3f}s"/></clipPath>'
+            f'<clipPath id="{clip_id}"><rect x="0" y="{r * CELL_H}" width="0" height="{CELL_H + 1}">'
+            f'<animate attributeName="width" from="0" to="{width:.1f}" begin="{delay:.3f}s" '
+            f'dur="{WIPE_DURATION}s" fill="freeze" calcMode="linear" />'
+            f'</rect></clipPath>'
         )
         texts.append(
             f'<text x="0" y="{y}" font-family="{FONT}" font-size="{CELL_H - 1.5}" '
@@ -95,20 +99,7 @@ def render(lines: list[str]) -> str:
   <defs>
     {''.join(clip_defs)}
   </defs>
-  <style>
-    .bg {{ fill: {BG}; }}
-    .wipe {{
-      animation-name: wipe-in;
-      animation-duration: {WIPE_DURATION}s;
-      animation-timing-function: steps(24, end);
-      animation-fill-mode: forwards;
-    }}
-    @keyframes wipe-in {{
-      from {{ width: 0; }}
-      to   {{ width: {width:.1f}px; }}
-    }}
-  </style>
-  <rect class="bg" x="0" y="0" width="{width:.1f}" height="{height:.1f}" />
+  <rect x="0" y="0" width="{width:.1f}" height="{height:.1f}" fill="{BG}" />
   {''.join(texts)}
 </svg>
 """
